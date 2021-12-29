@@ -44,8 +44,11 @@ export const DirectoryScreen = () => {
         content: []
     })
     const [open, setOpen] = useState(false)
+    const [open2, setOpen2] = useState(false)
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
+    const handleOpen2 = () => setOpen2(true);
+    const handleClose2 = () => setOpen2(false);
 
     let {path} = useParams()
     let url
@@ -77,16 +80,37 @@ export const DirectoryScreen = () => {
         }
         else navigate(`/${path_param}`)
     }
+
+    const downloadFile = async(file) => {
+        let url
+        if(path === undefined) url = `http://192.168.0.16:4000/download`
+        else url = `http://192.168.0.16:4000/download?path=${path}`
+
+        const request = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: file
+            })
+        })
+        const blob = await request.blob()
+        let link = window.URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = link;
+        a.download = file;
+        a.click();
+    }
     return (
         <FileContainer>
             <ButtonUpFile variant="contained" endIcon={<UploadFileIcon />} onClick={handleOpen}>
                 Subir archivo
             </ButtonUpFile>
-            <ButtonUpFile variant="contained" endIcon={<CreateNewFolderIcon />}>
+            <ButtonUpFile variant="contained" endIcon={<CreateNewFolderIcon />} onClick={handleOpen2}>
                 Crear directorio
             </ButtonUpFile>
 
-            <ModalUpFile open = {open} handleClose = {handleClose} path={path} setData = {setData}/>
+            <ModalUpFile type='upload' open = {open} handleClose = {handleClose} path={path} setData = {setData}/>
+            <ModalUpFile type='create' open = {open2} handleClose = {handleClose2} path={path} setData = {setData}/>
             {
                 path !== undefined ? 
                 <FileItem onClick={() => navigate(-1)}>
@@ -96,7 +120,7 @@ export const DirectoryScreen = () => {
             }
             {
                 data.content !== null ? data.content.map( file => (
-                    <FileItem key = {file} onClick={() => handleNavigate(file)}>
+                    <FileItem key = {file} onClick={() => file.indexOf('.') === -1 ?handleNavigate(file) : downloadFile(file)}>
                         {file.indexOf('.') !== -1 ? <InsertDriveFileIcon fontSize="large"/> : <FolderIcon fontSize="large"/>} {file}
                     </FileItem>
                 ))

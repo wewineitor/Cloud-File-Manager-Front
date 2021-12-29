@@ -4,19 +4,28 @@ import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 
 const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: '50vw',
-    bgcolor: 'background.paper',
-    border: '2px solid #000',
-    boxShadow: 24,
-    p: 4,
-  };
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '50vw',
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+};
 
-export const ModalUpFile = ({open, handleClose, path, setData}) => {
-  //let {getFiles} = useFile()
+export const ModalUpFile = ({type, open, handleClose, path, setData}) => {
+
+  const getFiles = async(url) => {
+    const request = await fetch(url);
+    const response = await request.json()
+    console.log(response)
+    setData({
+      path: response.path,
+      content: response.data
+    })
+  }
 
   const uploadFile = async(e) => {
     e.preventDefault()
@@ -35,14 +44,29 @@ export const ModalUpFile = ({open, handleClose, path, setData}) => {
       method: 'POST',
       body: data
     }) 
+    getFiles(url_getFiles)
+    handleClose()
+  }
 
-    const request = await fetch(url_getFiles);
-    const response = await request.json()
-    console.log(response)
-    setData({
-      path: response.path,
-      content: response.data
-    })
+  const createDirectory = async(e) => {
+    e.preventDefault()
+    let url, url_getFiles
+    if(path === undefined) {
+      url = `http://192.168.0.16:4000/create-directory`
+      url_getFiles = `http://192.168.0.16:4000/get-files`
+    }
+    else {
+      url = `http://192.168.0.16:4000/create-directory?path=${path}`
+      url_getFiles = `http://192.168.0.16:4000/get-files?path=${path}`
+    }
+    const data = new FormData(e.target)
+    console.log(data);
+
+    await fetch(url, {
+      method: 'POST',
+      body: data
+    }) 
+    getFiles(url_getFiles)
     handleClose()
   }
 
@@ -58,10 +82,20 @@ export const ModalUpFile = ({open, handleClose, path, setData}) => {
             Sube tu archivo
           </Typography>
           
-          <form encType="multipart/form-data" method='POST' onSubmit={uploadFile}>
-            <input type="file" name="foo"/>
-            <Button variant="contained" type='submit' >Subir</Button>
-          </form>
+          {
+          type === 'upload' ? 
+            <form encType="multipart/form-data" method='POST' onSubmit={uploadFile}>
+              <input type="file" name="foo"/>
+              <br />
+              <Button variant="contained" type='submit' >Subir</Button>
+            </form>
+            :
+            <form method='POST' onSubmit={createDirectory}>
+              <input type="text" name="newDirectory"/>
+              <br />
+              <Button variant="contained" type='submit' >Crear</Button>
+            </form>
+          }
         </Box>
       </Modal>
   )
